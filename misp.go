@@ -49,6 +49,28 @@ type SampleUpload struct {
 	Info         string       `json:"info,omitempty"` // event info field if no event ID supplied
 }
 
+// DownloadRequest represents a request sent to the /downloadSample/ endpoint
+type DownloadRequest struct {
+	Hash       string
+	EventID    int
+	AllSamples bool
+}
+
+// DownloadResponse represents the response of a DownloadRequest
+type DownloadResponse struct {
+	Result []DownloadResponseFile `json:"result"`
+}
+
+// DownloadResponseFile represents a malware sample
+type DownloadResponseFile struct {
+	MD5         string `json:"md5"`
+	Base64      string `json:"base64"`
+	Filename    string `json:"filename"`
+	AttributeID string `json:"attribute_id"`
+	EventID     string `json:"event_id"`
+	EventInfo   string `json:"event_info"`
+}
+
 // XResponse ... XXX
 type XResponse struct {
 	Name    string `json:"name,omitempty"`
@@ -216,9 +238,9 @@ func (client *Client) UploadSample(sample *SampleUpload) (*UploadResponse, error
 	return &resp, nil
 }
 
-// DownloadSample downloads a malware sample to the given file
-func (client *Client) DownloadSample(sampleID int, filename string) error {
-	path := fmt.Sprintf("/attributes/downloadAttachment/download/%d", sampleID)
+// DownloadAttachment downloads an attachment or malware sample to the given file
+func (client *Client) DownloadAttachment(attributeID int, filename string) error {
+	path := fmt.Sprintf("/attributes/downloadAttachment/download/%d", attributeID)
 
 	httpReq := &http.Request{}
 	httpReq.Method = "GET"
@@ -230,21 +252,66 @@ func (client *Client) DownloadSample(sampleID int, filename string) error {
 
 	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("Error downloading sample: %s", err.Error())
+		return fmt.Errorf("Error downloading attachment: %s", err)
 	}
 	defer resp.Body.Close()
 
 	outFile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
-		return fmt.Errorf("Error opening %s: %s", filename, err.Error())
+		return fmt.Errorf("Error opening %s: %s", filename, err)
 	}
 
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
-		return fmt.Errorf("Error writing to %s: %s", filename, err.Error())
+		return fmt.Errorf("Error writing to %s: %s", filename, err)
 	}
 
 	return nil
+}
+
+// DownloadSample downloads a malware sample to a given file
+func (client *Client) DownloadSample(request DownloadRequest, filename string) error {
+	type requestAllSamples struct {
+		Hash       string `json:"hash"`
+		EventID    int    `json:"eventID"`
+		AllSamples int    `json:"allSamples"`
+	}
+
+	type requestNotAllSamples struct {
+		Hash    string `json:"hash"`
+		EventID int    `json:"eventID"`
+	}
+
+	var actualRequest interface{}
+	if request.AllSamples {
+		actualRequest = requestAllSamples{
+			Hash:       request.Hash,
+			EventID:    request.EventID,
+			AllSamples: 1,
+		}
+	} else {
+		actualRequest = requestNotAllSamples{
+			Hash:    request.Hash,
+			EventID: request.EventID,
+		}
+	}
+
+	resp, err := client.Get("/attributes/downloadSample/", actualRequest)
+
+	// Parse response
+	var downloadResponse DownloadResponse
+	jsonDecoder := json.NewDecoder(resp.Body)
+	if err = jsonDecoder.Decode(&downloadResponse); err != nil {
+		return fmt.Errorf("Error decoding response: %s", err)
+	}
+
+	if len(downloadResponse.Result) == 0 {
+		return fmt.Errorf("No results")
+	}
+
+	// Download attachment
+	attrID, _ := strconv.ParseInt(downloadResponse.Result[0].AttributeID, 10, 32)
+	return client.DownloadAttachment(int(attrID), filename)
 }
 
 // Get is a wrapper to Do()
