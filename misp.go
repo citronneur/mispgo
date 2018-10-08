@@ -312,6 +312,7 @@ func (client *Client) DownloadSample(request DownloadRequest, filename string) e
 	}
 
 	// Download attachment
+	// TODO: it's cool to use DownloadAttachment because DRY, but we end up downloading the file twice...
 	attrID, _ := strconv.ParseInt(downloadResponse.Result[0].AttributeID, 10, 32)
 	return client.DownloadAttachment(int(attrID), filename)
 }
