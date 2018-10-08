@@ -49,28 +49,6 @@ type SampleUpload struct {
 	Info         string       `json:"info,omitempty"` // event info field if no event ID supplied
 }
 
-// DownloadRequest represents a request sent to the /downloadSample/ endpoint
-type DownloadRequest struct {
-	Hash       string
-	EventID    int
-	AllSamples bool
-}
-
-// DownloadResponse represents the response of a DownloadRequest
-type DownloadResponse struct {
-	Result []DownloadResponseFile `json:"result"`
-}
-
-// DownloadResponseFile represents a malware sample
-type DownloadResponseFile struct {
-	MD5         string `json:"md5"`
-	Base64      string `json:"base64"`
-	Filename    string `json:"filename"`
-	AttributeID string `json:"attribute_id"`
-	EventID     string `json:"event_id"`
-	EventInfo   string `json:"event_info"`
-}
-
 // XResponse ... XXX
 type XResponse struct {
 	Name    string `json:"name,omitempty"`
@@ -165,6 +143,31 @@ type AttributeQuery struct {
 func (client *Client) Search() {
 	// client.Do("/")
 
+}
+
+// GetEventByID fetches the Event which has the given eventID
+func (client *Client) GetEventByID(eventID string) (*Event, error) {
+	type eventResponseType struct {
+		Event Event `json:"Event"`
+	}
+
+	path := fmt.Sprintf("/events/%s", eventID)
+
+	resp, err := client.Get(path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var eventResult eventResponseType
+	decoder := json.NewDecoder(resp.Body)
+	if err = decoder.Decode(&eventResult); err != nil {
+		return nil, fmt.Errorf("Could not unmarshal event: %s", err)
+	}
+
+	result := &eventResult.Event
+	result.client = client
+
+	return result, nil
 }
 
 // PublishEvent ... XXX
@@ -264,76 +267,6 @@ func (client *Client) DownloadAttachment(attributeID int, filename string) error
 	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		return fmt.Errorf("Error writing to %s: %s", filename, err)
-	}
-
-	return nil
-}
-
-// DownloadSample downloads a malware sample to a given file
-func (client *Client) DownloadSample(request DownloadRequest, filename string) error {
-	type requestAllSamples struct {
-		Hash       string `json:"hash"`
-		EventID    int    `json:"eventID"`
-		AllSamples int    `json:"allSamples"`
-	}
-
-	type requestNotAllSamples struct {
-		Hash    string `json:"hash"`
-		EventID int    `json:"eventID"`
-	}
-
-	var actualRequest interface{}
-	if request.AllSamples {
-		actualRequest = requestAllSamples{
-			Hash:       request.Hash,
-			EventID:    request.EventID,
-			AllSamples: 1,
-		}
-	} else {
-		actualRequest = requestNotAllSamples{
-			Hash:    request.Hash,
-			EventID: request.EventID,
-		}
-	}
-
-	resp, err := client.Get("/attributes/downloadSample/", Request{
-		Request: actualRequest,
-	})
-
-	// Parse response
-	var downloadResponse DownloadResponse
-	jsonDecoder := json.NewDecoder(resp.Body)
-	if err = jsonDecoder.Decode(&downloadResponse); err != nil {
-		return fmt.Errorf("Error decoding response: %s", err)
-	}
-
-	if len(downloadResponse.Result) == 0 {
-		return fmt.Errorf("No results")
-	}
-
-	// Download attachment
-	// TODO: it's cool to use DownloadAttachment because DRY, but we end up downloading the file twice...
-	attrID, _ := strconv.ParseInt(downloadResponse.Result[0].AttributeID, 10, 32)
-	return client.DownloadAttachment(int(attrID), filename)
-}
-
-// AddTag adds a tag to a given event
-func (client *Client) AddTag(eventUUID string, tagName string) error {
-	type tagRequest struct {
-		UUID string `json:"uuid"`
-		Tag  string `json:"tag"`
-	}
-
-	req := tagRequest{
-		UUID: eventUUID,
-		Tag:  tagName,
-	}
-
-	_, err := client.Post("/tags/attachTagToObject", Request{
-		Request: req,
-	})
-	if err != nil {
-		return err
 	}
 
 	return nil
