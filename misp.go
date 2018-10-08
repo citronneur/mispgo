@@ -317,6 +317,28 @@ func (client *Client) DownloadSample(request DownloadRequest, filename string) e
 	return client.DownloadAttachment(int(attrID), filename)
 }
 
+// AddTag adds a tag to a given event
+func (client *Client) AddTag(eventUUID string, tagName string) error {
+	type tagRequest struct {
+		UUID string `json:"uuid"`
+		Tag  string `json:"tag"`
+	}
+
+	req := tagRequest{
+		UUID: eventUUID,
+		Tag:  tagName,
+	}
+
+	_, err := client.Post("/tags/attachTagToObject", Request{
+		Request: req,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Get is a wrapper to Do()
 func (client *Client) Get(path string, req interface{}) (*http.Response, error) {
 	return client.Do("GET", path, req)
