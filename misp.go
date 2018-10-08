@@ -296,7 +296,9 @@ func (client *Client) DownloadSample(request DownloadRequest, filename string) e
 		}
 	}
 
-	resp, err := client.Get("/attributes/downloadSample/", actualRequest)
+	resp, err := client.Get("/attributes/downloadSample/", Request{
+		Request: actualRequest,
+	})
 
 	// Parse response
 	var downloadResponse DownloadResponse
