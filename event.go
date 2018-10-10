@@ -29,12 +29,11 @@ type DownloadResponseFile struct {
 	EventInfo   string `json:"event_info"`
 }
 
-// DownloadSample downloads a malware sample to a given file
+// DownloadSample downloads a malware sample to a given file. If hash is empty, download the first available sample for the event
 func (event *Event) DownloadSample(hash string, filename string) error {
 	type requestAllSamples struct {
-		Hash       string `json:"hash"`
-		EventID    int    `json:"eventID"`
-		AllSamples int    `json:"allSamples"`
+		EventID    int `json:"eventID"`
+		AllSamples int `json:"allSamples"`
 	}
 
 	type requestNotAllSamples struct {
@@ -46,7 +45,6 @@ func (event *Event) DownloadSample(hash string, filename string) error {
 	eventID, _ := strconv.Atoi(event.ID)
 	if hash == "" {
 		actualRequest = requestAllSamples{
-			Hash:       hash,
 			EventID:    eventID,
 			AllSamples: 1,
 		}
