@@ -13,6 +13,7 @@ type Event struct {
 	UUID      string      `json:"uuid"`
 	Attribute []Attribute `json:"Attribute"`
 	Tags      []Tag       `json:"Tag"`
+	Objects   []Object    `json:"Object"`
 }
 
 // Tag represents an event tag
@@ -21,6 +22,18 @@ type Tag struct {
 	Name       string `json:"name"`
 	Colour     string `json:"colour"`
 	Exportable bool   `json:"exportable"`
+}
+
+// Object is a MISP object
+type Object struct {
+	ID           string      `json:"id"`
+	Name         string      `json:"name"`
+	MetaCategory string      `json:"meta-category"`
+	Description  string      `json:"description"`
+	EventID      string      `json:"event_id"`
+	UUID         string      `json:"uuid"`
+	Timestamp    string      `json:"timestamp"`
+	Attributes   []Attribute `json:"Attribute"`
 }
 
 // DownloadResponse represents the response of a DownloadRequest
