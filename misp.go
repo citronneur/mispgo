@@ -2,6 +2,7 @@ package misp
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,8 +15,9 @@ import (
 
 // Client ... XXX
 type Client struct {
-	BaseURL *url.URL
-	APIKey  string
+	BaseURL           *url.URL
+	APIKey            string
+	IgnoreInsecureSSL bool
 }
 
 // Sighting ... XXX
@@ -316,6 +318,14 @@ func (client *Client) SearchAttribute(q *AttributeQuery) ([]Attribute, error) {
 func (client *Client) Do(method, path string, req interface{}) (*http.Response, error) {
 	httpReq := &http.Request{}
 
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+	}
+
+	if client.IgnoreInsecureSSL {
+		tr.TLSClientConfig.InsecureSkipVerify = true
+	}
+
 	if req != nil {
 		jsonBuf, err := json.Marshal(req)
 		if err != nil {
@@ -333,7 +343,9 @@ func (client *Client) Do(method, path string, req interface{}) (*http.Response, 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Accept", "application/json")
 
-	httpClient := http.Client{}
+	httpClient := http.Client{
+		Transport: tr,
+	}
 	resp, err := httpClient.Do(httpReq)
 	if err != nil {
 		return nil, err
