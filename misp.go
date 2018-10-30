@@ -247,6 +247,23 @@ func (client *Client) UploadSample(sample *SampleUpload) (*UploadResponse, error
 func (client *Client) DownloadAttachment(attributeID int, filename string) error {
 	path := fmt.Sprintf("/attributes/downloadAttachment/download/%d", attributeID)
 
+	defaultTransport := http.DefaultTransport.(*http.Transport)
+
+	// Create new Transport that ignores self-signed SSL
+	tr := &http.Transport{
+		Proxy:                 defaultTransport.Proxy,
+		DialContext:           defaultTransport.DialContext,
+		MaxIdleConns:          defaultTransport.MaxIdleConns,
+		IdleConnTimeout:       defaultTransport.IdleConnTimeout,
+		ExpectContinueTimeout: defaultTransport.ExpectContinueTimeout,
+		TLSHandshakeTimeout:   defaultTransport.TLSHandshakeTimeout,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: false},
+	}
+
+	if client.IgnoreInsecureSSL {
+		tr.TLSClientConfig.InsecureSkipVerify = true
+	}
+
 	httpReq := &http.Request{}
 	httpReq.Method = "GET"
 	httpReq.URL = client.BaseURL
@@ -255,7 +272,11 @@ func (client *Client) DownloadAttachment(attributeID int, filename string) error
 	httpReq.Header = make(http.Header)
 	httpReq.Header.Set("Authorization", client.APIKey)
 
-	resp, err := http.DefaultClient.Do(httpReq)
+	httpClient := http.Client{
+		Transport: tr,
+	}
+
+	resp, err := httpClient.Do(httpReq)
 	if err != nil {
 		return fmt.Errorf("Error downloading attachment: %s", err)
 	}
