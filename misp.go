@@ -318,8 +318,17 @@ func (client *Client) SearchAttribute(q *AttributeQuery) ([]Attribute, error) {
 func (client *Client) Do(method, path string, req interface{}) (*http.Response, error) {
 	httpReq := &http.Request{}
 
+	defaultTransport := http.DefaultTransport.(*http.Transport)
+
+	// Create new Transport that ignores self-signed SSL
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+		Proxy:                 defaultTransport.Proxy,
+		DialContext:           defaultTransport.DialContext,
+		MaxIdleConns:          defaultTransport.MaxIdleConns,
+		IdleConnTimeout:       defaultTransport.IdleConnTimeout,
+		ExpectContinueTimeout: defaultTransport.ExpectContinueTimeout,
+		TLSHandshakeTimeout:   defaultTransport.TLSHandshakeTimeout,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: false},
 	}
 
 	if client.IgnoreInsecureSSL {
