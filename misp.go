@@ -326,7 +326,7 @@ func (client *Client) SearchAttribute(q *AttributeQuery) ([]Attribute, error) {
 	if err := json.Unmarshal(outer.Response, &inner); err != nil {
 		var empty []string
 		if err := json.Unmarshal(outer.Response, &empty); err != nil {
-			return nil, fmt.Errorf("Inner structure has unknown format")
+			return nil, fmt.Errorf("Inner structure has unknown format: %s", outer.Response)
 		}
 		return []Attribute{}, nil
 	}
