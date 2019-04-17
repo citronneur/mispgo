@@ -152,6 +152,28 @@ func (client *Client) GetEventByID(eventID string) (*Event, error) {
 	return result, nil
 }
 
+// GetAttributeByID fetches an attribute by its ID or UUID
+func (client *Client) GetAttributeByID(attrID string) (*Attribute, error) {
+	type attrResponseType struct {
+		Attribute Attribute `json:"Attribute"`
+	}
+
+	path := fmt.Sprintf("/attributes/%s", attrID)
+
+	resp, err := client.Get(path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var attrResult attrResponseType
+	decoder := json.NewDecoder(resp.Body)
+	if err = decoder.Decode(&attrResult); err != nil {
+		return nil, fmt.Errorf("Could not unmarshal attribute: %s", err)
+	}
+
+	return &attrResult.Attribute, nil
+}
+
 // PublishEvent ... XXX
 func (client *Client) PublishEvent(eventID string, email bool) (*Response, error) {
 	var path string
