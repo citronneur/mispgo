@@ -55,6 +55,10 @@ func (event *Event) downloadSampleRequest(request interface{}) (*DownloadRespons
 	resp, err := event.client.Get("/attributes/downloadSample/", Request{
 		Request: request,
 	})
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
 	// Parse response
 	var downloadResponse DownloadResponse
