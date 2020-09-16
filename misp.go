@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 )
 
 // Client ... XXX
@@ -18,6 +19,7 @@ type Client struct {
 	BaseURL           *url.URL
 	APIKey            string
 	IgnoreInsecureSSL bool
+	Timeout           time.Duration // Timeout specifies how long to wait for a response from MISP. Zero means no timeout
 }
 
 // Sighting ... XXX
@@ -276,6 +278,7 @@ func (client *Client) DownloadAttachment(attributeID int, filename string) error
 
 	httpClient := http.Client{
 		Transport: tr,
+		Timeout:   client.Timeout,
 	}
 
 	resp, err := httpClient.Do(httpReq)
