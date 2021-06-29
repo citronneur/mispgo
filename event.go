@@ -15,6 +15,7 @@ type Event struct {
 	Tags      []Tag       `json:"Tag"`
 	Objects   []Object    `json:"Object"`
 	Info      string      `json:"Info"`
+	Date      string      `json:"Date"`
 }
 
 // Tag represents an event tag
