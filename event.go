@@ -16,6 +16,8 @@ type Event struct {
 	Objects   []Object    `json:"Object"`
 	Info      string      `json:"Info"`
 	Date      string      `json:"Date"`
+	Org       Org         `json::Org`
+	Orgc      Org         `json::Orgc`
 }
 
 // Tag represents an event tag
@@ -24,6 +26,13 @@ type Tag struct {
 	Name       string `json:"name"`
 	Colour     string `json:"colour"`
 	Exportable bool   `json:"exportable"`
+}
+
+// Org represents an event tag
+type Org struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	UUID string `json:"uuid"`
 }
 
 // Object is a MISP object
