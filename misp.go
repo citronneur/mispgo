@@ -17,6 +17,7 @@ import (
 // Interface that list all available interface
 type Misp interface {
 	Search()
+	GetBaseURL()(*url.URL)
 	GetEventByID(eventID string) (*Event, error)
 	GetAttributeByID(attrID string) (*Attribute, error)
 	PublishEvent(eventID string, email bool) (*Response, error)
@@ -143,6 +144,10 @@ type AttributeQuery struct {
 func (client *Client) Search() {
 	// client.Do("/")
 
+}
+
+func (client *Client)GetBaseURL()(*url.URL) {
+	return client.BaseURL
 }
 
 // GetEventByID fetches the Event which has the given eventID
