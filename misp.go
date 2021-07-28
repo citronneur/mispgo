@@ -14,8 +14,24 @@ import (
 	"time"
 )
 
+// Interface that list all available interface
+type Misp interface {
+	Search()
+	GetEventByID(eventID string) (*Event, error)
+	GetAttributeByID(attrID string) (*Attribute, error)
+	PublishEvent(eventID string, email bool) (*Response, error)
+	AddSighting(s *Sighting) (*Response, error)
+	UploadSample(sample *SampleUpload) (*UploadResponse, error)
+	DownloadAttachment(attributeID int, filename string) error
+	Get(path string, req interface{}) (*http.Response, error)
+	Post(path string, req interface{}) (*http.Response, error)
+	SearchAttribute(q *AttributeQuery) ([]Attribute, error)
+	Do(method, path string, req interface{}) (*http.Response, error)
+}
+
 // Client ... XXX
 type Client struct {
+	Misp
 	BaseURL           *url.URL
 	APIKey            string
 	IgnoreInsecureSSL bool
